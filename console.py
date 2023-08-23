@@ -41,60 +41,33 @@ class HBNBCommand(cmd.Cmd):
         print()
         return True
 
-def do_create(self, line):
+def do_create(self, arg):
     """
-    Creates a new instance of BaseModel and saves it with specified parameters.
-
-    Command syntax: create <Class name> <param 1> <param 2> <param 3>...
-    Param syntax: <key name>=<value>
-    Value syntax:
-        String: "<value>" => starts with a double quote
-        Any double quote inside the value must be escaped with a backslash \
-        All underscores _ must be replaced by spaces.
-        Float: <unit>.<decimal> => contains a dot .
-        Integer: <number> => default case
-
-    Example:
-    create State name="California"
-    create Place city_id="0001" user_id="0001" name="My_little_house" number_rooms=4 number_bathrooms=2 max_guest=10 price_by_night=300 latitude=37.773972 longitude=-122.431297
+        Create a new instance of class BaseModel and saves it
+        to the JSON file.
     """
-    try:
-        if not line:
-            raise SyntaxError("Missing class name and parameters")
+    args = arg.split()
 
-        parts = line.split()
-        cls_name = parts[0]
-        cls = self.all_classes.get(cls_name)
-        if not cls:
-            raise KeyError(f"Class '{cls_name}' doesn't exist")
+    if len(args) == 0:
+        print("** class name missing **")
+        return
 
-        params = {}
-        for param in parts[1:]:
-            key, value = param.split('=')
-            if value.startswith('"') and value.endswith('"'):
-                value = value[1:-1].replace('\\"', '"').replace('_', ' ')
-            elif '.' in value:
-                try:
-                    value = float(value)
-                except ValueError:
-                    continue
-            else:
-                try:
-                    value = int(value)
-                except ValueError:
-                    continue
-            params[key] = value
+    new_args = []
+    for a in args:
+        start_idx = a.find("=")
+        a = a[0: start_idx] + a[start_idx:].replace("_", " ")
+        new_args.append(a)
 
-        obj = cls(**params)
-        models.storage.new(obj)
-        models.storage.save()
-        print(obj.id)
+    if new_args[0] not in classes:
+        print("** class doesn't exist **")
+        return
 
-    except SyntaxError as e:
-        print("** Syntax:", e)
-    except KeyError:
-        print("** Class doesn't exist **")
-
+    new_instance = classes[new_args[0]]()
+    for k, v in zip(new_args[1:], args[1:]):
+        setattr(new_instance, k, v)
+    new_instance.save()
+    print(new_instance.id)
+    
     def do_show(self, args):
         '''
             Print the string representation of an instance baed on
