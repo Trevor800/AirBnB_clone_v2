@@ -113,18 +113,42 @@ class HBNBCommand(cmd.Cmd):
         """ Overrides the emptyline method of CMD """
         pass
 
-    def do_create(self, args):
-        """ Create an object of any class"""
-        if not args:
-            print("** class name missing **")
-            return
-        elif args not in HBNBCommand.classes:
-            print("** class doesn't exist **")
-            return
-        new_instance = HBNBCommand.classes[args]()
-        storage.save()
-        print(new_instance.id)
-        storage.save()
+def do_create(self, args):
+    """ Create an object of any class with given parameters"""
+    if not args:
+        print("** class name missing **")
+        return
+
+    arg_list = args.split()
+    class_name = arg_list[0]
+
+    if class_name not in HBNBCommand.classes:
+        print("** class doesn't exist **")
+        return
+
+    param_dict = {}
+    for param in arg_list[1:]:
+        if "=" in param:
+            key, value = param.split("=")
+            value = value.replace("_", " ")  # Replace underscores with spaces
+            if value.startswith('"') and value.endswith('"'):
+                value = value[1:-1]  # Remove enclosing double quotes
+            elif "." in value:
+                try:
+                    value = float(value)  # Convert to float if it contains a dot
+                except ValueError:
+                    pass  # If not a valid float, keep it as a string
+            else:
+                try:
+                    value = int(value)  # Convert to integer if possible
+                except ValueError:
+                    pass  # If not a valid integer, keep it as a string
+            param_dict[key] = value
+
+    new_instance = HBNBCommand.classes[class_name](**param_dict)
+    storage.save()
+    print(new_instance.id)
+    storage.save()
 
     def help_create(self):
         """ Help information for the create method """
