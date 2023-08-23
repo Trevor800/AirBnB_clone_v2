@@ -41,38 +41,52 @@ class HBNBCommand(cmd.Cmd):
         print()
         return True
 
-def do_create(self, arg):
-        """
-        Create a new instance of class BaseModel and save it to the JSON file.
-        """
-        args = shlex.split(arg)
-        
-        if not args:
+    def do_create(self, arg):
+        '''
+            Create a new instance of class BaseModel and saves it
+            to the JSON file.
+        '''
+        args = arg.split()
+
+        if len(args) == 0:
             print("** class name missing **")
             return
-        
-        class_name = args[0]
-        if class_name not in self.classes:
+
+        new_args = []
+        for a in args:
+            start_idx = a.find("=")
+            a = a[0: start_idx] + a[start_idx:].replace('_', ' ')
+            new_args.append(a)
+
+        if new_args[0] in classes:
+            new_instance = classes[new_args[0]]()
+            new_dict = {}
+            for a in new_args:
+                if a != new_args[0]:
+                    new_list = a.split('=')
+                    new_dict[new_list[0]] = new_list[1]
+
+            for k, v in new_dict.items():
+                if v[0] == '"':
+                    v_list = shlex.split(v)
+                    new_dict[k] = v_list[0]
+                    setattr(new_instance, k, new_dict[k])
+                else:
+                    try:
+                        if type(eval(v)).__name__ == 'int':
+                            v = eval(v)
+                    except:
+                        continue
+                    try:
+                        if type(eval(str(v))).__name__ == 'float':
+                            v = eval(v)
+                    except:
+                        continue
+                    setattr(new_instance, k, v)
+            new_instance.save()
+            print(new_instance.id)
+        else:
             print("** class doesn't exist **")
-            return
-        
-        kwargs = {}
-        for a in args[1:]:
-            key, value = a.split('=')
-            value = value.replace('_', ' ')
-            try:
-                value = int(value)
-            except ValueError:
-                try:
-                    value = float(value)
-                except ValueError:
-                    value = value.strip('"')
-            kwargs[key] = value
-        
-        instance = self.classes[class_name](**kwargs)
-        storage.new(instance)
-        storage.save()
-        print(instance.id)
     
     def do_show(self, args):
         '''
