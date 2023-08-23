@@ -41,52 +41,59 @@ class HBNBCommand(cmd.Cmd):
         print()
         return True
 
-    def do_create(self, arg):
-        '''
-            Create a new instance of class BaseModel and saves it
-            to the JSON file.
-        '''
-        args = arg.split()
+def do_create(self, line):
+    """
+    Creates a new instance of BaseModel and saves it with specified parameters.
 
-        if len(args) == 0:
-            print("** class name missing **")
-            return
+    Command syntax: create <Class name> <param 1> <param 2> <param 3>...
+    Param syntax: <key name>=<value>
+    Value syntax:
+        String: "<value>" => starts with a double quote
+        Any double quote inside the value must be escaped with a backslash \
+        All underscores _ must be replaced by spaces.
+        Float: <unit>.<decimal> => contains a dot .
+        Integer: <number> => default case
 
-        new_args = []
-        for a in args:
-            start_idx = a.find("=")
-            a = a[0: start_idx] + a[start_idx:].replace('_', ' ')
-            new_args.append(a)
+    Example:
+    create State name="California"
+    create Place city_id="0001" user_id="0001" name="My_little_house" number_rooms=4 number_bathrooms=2 max_guest=10 price_by_night=300 latitude=37.773972 longitude=-122.431297
+    """
+    try:
+        if not line:
+            raise SyntaxError("Missing class name and parameters")
 
-        if new_args[0] in classes:
-            new_instance = classes[new_args[0]]()
-            new_dict = {}
-            for a in new_args:
-                if a != new_args[0]:
-                    new_list = a.split('=')
-                    new_dict[new_list[0]] = new_list[1]
+        parts = line.split()
+        cls_name = parts[0]
+        cls = self.all_classes.get(cls_name)
+        if not cls:
+            raise KeyError(f"Class '{cls_name}' doesn't exist")
 
-            for k, v in new_dict.items():
-                if v[0] == '"':
-                    v_list = shlex.split(v)
-                    new_dict[k] = v_list[0]
-                    setattr(new_instance, k, new_dict[k])
-                else:
-                    try:
-                        if type(eval(v)).__name__ == 'int':
-                            v = eval(v)
-                    except:
-                        continue
-                    try:
-                        if type(eval(str(v))).__name__ == 'float':
-                            v = eval(v)
-                    except:
-                        continue
-                    setattr(new_instance, k, v)
-            new_instance.save()
-            print(new_instance.id)
-        else:
-            print("** class doesn't exist **")
+        params = {}
+        for param in parts[1:]:
+            key, value = param.split('=')
+            if value.startswith('"') and value.endswith('"'):
+                value = value[1:-1].replace('\\"', '"').replace('_', ' ')
+            elif '.' in value:
+                try:
+                    value = float(value)
+                except ValueError:
+                    continue
+            else:
+                try:
+                    value = int(value)
+                except ValueError:
+                    continue
+            params[key] = value
+
+        obj = cls(**params)
+        models.storage.new(obj)
+        models.storage.save()
+        print(obj.id)
+
+    except SyntaxError as e:
+        print("** Syntax:", e)
+    except KeyError:
+        print("** Class doesn't exist **")
 
     def do_show(self, args):
         '''
