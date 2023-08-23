@@ -41,6 +41,22 @@ class TestCreateCommand(unittest.TestCase):
         expected_output = "** class doesn't exist **\n"
         self.assertEqual(expected_output, mock_stdout.getvalue())
 
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_create_with_string_value(self, mock_stdout):
+        with patch('models.storage.save') as mock_save:
+            self.cmd.onecmd("create BaseModel name=\"Test Model\" value=\"Test Value\"")
+            expected_output = "[BaseModel] ("
+            self.assertIn(expected_output, mock_stdout.getvalue())
+            self.assertTrue(mock_save.called)
+
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_create_with_float_value(self, mock_stdout):
+        with patch('models.storage.save') as mock_save:
+            self.cmd.onecmd("create BaseModel name=\"Test Model\" value=3.14")
+            expected_output = "[BaseModel] ("
+            self.assertIn(expected_output, mock_stdout.getvalue())
+            self.assertTrue(mock_save.called)
+
     # Add more test cases to cover different scenarios
 
 if __name__ == '__main__':
