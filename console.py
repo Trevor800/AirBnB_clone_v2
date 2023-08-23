@@ -42,31 +42,37 @@ class HBNBCommand(cmd.Cmd):
         return True
 
 def do_create(self, arg):
-    """
-        Create a new instance of class BaseModel and saves it
-        to the JSON file.
-    """
-    args = arg.split()
-
-    if len(args) == 0:
-        print("** class name missing **")
-        return
-
-    new_args = []
-    for a in args:
-        start_idx = a.find("=")
-        a = a[0: start_idx] + a[start_idx:].replace("_", " ")
-        new_args.append(a)
-
-    if new_args[0] not in classes:
-        print("** class doesn't exist **")
-        return
-
-    new_instance = classes[new_args[0]]()
-    for k, v in zip(new_args[1:], args[1:]):
-        setattr(new_instance, k, v)
-    new_instance.save()
-    print(new_instance.id)
+        """
+        Create a new instance of class BaseModel and save it to the JSON file.
+        """
+        args = shlex.split(arg)
+        
+        if not args:
+            print("** class name missing **")
+            return
+        
+        class_name = args[0]
+        if class_name not in self.classes:
+            print("** class doesn't exist **")
+            return
+        
+        kwargs = {}
+        for a in args[1:]:
+            key, value = a.split('=')
+            value = value.replace('_', ' ')
+            try:
+                value = int(value)
+            except ValueError:
+                try:
+                    value = float(value)
+                except ValueError:
+                    value = value.strip('"')
+            kwargs[key] = value
+        
+        instance = self.classes[class_name](**kwargs)
+        storage.new(instance)
+        storage.save()
+        print(instance.id)
     
     def do_show(self, args):
         '''
