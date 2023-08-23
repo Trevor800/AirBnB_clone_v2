@@ -35,7 +35,7 @@ class BaseModel:
         return '[{}] ({}) {}'.format(cls, self.id, self.__dict__)
 
     def save(self):
-        """Updates updated_at with the current time when the instance is changed"""
+        """Updates updated_at with the current time when instance is changed"""
         from models import storage
         self.updated_at = datetime.now()
         storage.save()
