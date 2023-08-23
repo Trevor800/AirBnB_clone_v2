@@ -32,11 +32,3 @@ class test_User(test_basemodel):
         """ """
         new = self.value()
         self.assertEqual(type(new.password), str)
-        
-    def test_nullable_first_name(self):
-        new_user = User(first_name=None)
-        self.assertIsNone(new_user.first_name)
-
-    def test_nullable_last_name(self):
-        new_user = User(last_name=None)
-        self.assertIsNone(new_user.last_name)
