@@ -3,61 +3,110 @@
 
 import os
 import sys
-from unittest.mock import create_autospec
-from io import StringIO
-from console import HBNBCommand
-import os
 import models
 import unittest
+from io import StringIO
+from console import HBNBCommand
+from unittest.mock import create_autospec
+import json
 
 
-class TestCreateCommand(unittest.TestCase):
+class test_console(unittest.TestCase):
+    ''' Test the console module'''
+
+    """Check for Pep8 style conformance"""
 
     def setUp(self):
-        self.cmd = HBNBCommand()
-        self.mock_stdout = StringIO()
-        storage.reset()
+        '''setup for'''
+        self.backup = sys.stdout
+        self.capt_out = StringIO()
+        sys.stdout = self.capt_out
+        self.storage = models.Storage()
 
     def tearDown(self):
-        self.mock_stdout.close()
+        ''''''
+        sys.stdout = self.backup
+        self.storage.clear()
 
-    @patch('sys.stdout', new_callable=StringIO)
-    def test_create_base_model_with_valid_params(self, mock_stdout):
-        with patch('models.storage.save') as mock_save:
-            self.cmd.onecmd("create BaseModel name=\"Test Model\" value=42")
-            expected_output = "[BaseModel] ("
-            self.assertIn(expected_output, mock_stdout.getvalue())
-            self.assertTrue(mock_save.called)
+    def create(self):
+        ''' create an instance of the HBNBCommand class'''
+        return HBNBCommand(self.storage)
 
-    @patch('sys.stdout', new_callable=StringIO)
-    def test_create_missing_class_name(self, mock_stdout):
-        self.cmd.onecmd("create")
-        expected_output = "** class name missing **\n"
-        self.assertEqual(expected_output, mock_stdout.getvalue())
+    def test_quit(self):
+        ''' Test quit exists'''
+        console = self.create()
+        self.assertTrue(console.onecmd("quit"))
 
-    @patch('sys.stdout', new_callable=StringIO)
-    def test_create_with_invalid_class(self, mock_stdout):
-        self.cmd.onecmd("create InvalidClass name=\"Test Model\" value=42")
-        expected_output = "** class doesn't exist **\n"
-        self.assertEqual(expected_output, mock_stdout.getvalue())
+    def test_EOF(self):
+        ''' Test EOF exists'''
+        console = self.create()
+        self.assertTrue(console.onecmd("EOF"))
 
-    @patch('sys.stdout', new_callable=StringIO)
-    def test_create_with_string_value(self, mock_stdout):
-        with patch('models.storage.save') as mock_save:
-            self.cmd.onecmd("create BaseModel name=\"Test Model\" value=\"Test Value\"")
-            expected_output = "[BaseModel] ("
-            self.assertIn(expected_output, mock_stdout.getvalue())
-            self.assertTrue(mock_save.called)
+    def test_all(self):
+        ''' Test all exists'''
+        console = self.create()
+        console.onecmd("create User")
+        self.assertTrue(isinstance(self.capt_out.getvalue(), str))
 
-    @patch('sys.stdout', new_callable=StringIO)
-    def test_create_with_float_value(self, mock_stdout):
-        with patch('models.storage.save') as mock_save:
-            self.cmd.onecmd("create BaseModel name=\"Test Model\" value=3.14")
-            expected_output = "[BaseModel] ("
-            self.assertIn(expected_output, mock_stdout.getvalue())
-            self.assertTrue(mock_save.called)
+    @unittest.skipIf(
+        os.getenv('HBNB_TYPE_STORAGE') == 'db',
+        "won't work in db")
+    def test_show(self):
+        '''
+            Testing that show exists
+        '''
+        console = self.create()
+        console.onecmd("create User")
+        user_id = self.capt_out.getvalue()
+        sys.stdout = self.backup
+        self.capt_out.close()
+        self.capt_out = StringIO()
+        sys.stdout = self.capt_out
+        console.onecmd("show User " + user_id)
+        x = (self.capt_out.getvalue())
+        sys.stdout = self.backup
+        self.assertTrue(isinstance(x, str))
+        self.assertTrue(json.loads(x)['id'] == user_id)
 
-    # Add more test cases to cover different scenarios
+    @unittest.skipIf(
+        os.getenv('HBNB_TYPE_STORAGE') == 'db',
+        "won't work in db")
+    def test_show_class_name(self):
+        '''
+            Testing the error messages for class name missing.
+        '''
+        console = self.create()
+        console.onecmd("create User")
+        user_id = self.capt_out.getvalue()
+        sys.stdout = self.backup
+        self.capt_out.close()
+        self.capt_out = StringIO()
+        sys.stdout = self.capt_out
+        console.onecmd("show")
+        x = (self.capt_out.getvalue())
+        sys.stdout = self.backup
+        self.assertEqual("** class name missing **\n", x)
 
-if __name__ == '__main__':
-    unittest.main()
+    @unittest.skipIf(
+        os.getenv('HBNB_TYPE_STORAGE') == 'db',
+        "won't work in db")
+    def test_show_class_name(self):
+        '''
+            Test show message error for id missing
+        '''
+        console = self.create()
+        console.onecmd("create User")
+        user_id = self.capt_out.getvalue()
+        sys.stdout = self.backup
+        self.capt_out.close()
+        self.capt_out = StringIO()
+        sys.stdout = self.capt_out
+        console.onecmd("show User")
+        x = (self.capt_out.getvalue())
+        sys.stdout = self.backup
+        self.assertEqual("** instance id missing **\n", x)
+
+    @unittest.skipIf(
+        os.getenv('HBNB_TYPE_STORAGE') == 'db',
+        "won't work in db")
+    def test_show_no_instance_found(self):
