@@ -1,38 +1,44 @@
 #!/usr/bin/env bash
 # Check if Nginx is installed, and if not, install it
-if ! command -v nginx &> /dev/null; then
-    sudo apt-get update
-    sudo apt-get -y install nginx
+if ! command -v nginx &>/dev/null; then
+  apt-get update
+  apt-get install nginx -y
 fi
 
-# Create necessary directories if they don't exist
-sudo mkdir -p /data/web_static/releases/test /data/web_static/shared
+# Create the /data/web_static/releases/test directory
+mkdir -p /data/web_static/releases/test
 
-# Create a fake HTML file for testing
-echo "<html>
-  <head>
-  </head>
-  <body>
-    Holberton School
-  </body>
-</html>" | sudo tee /data/web_static/releases/test/index.html > /dev/null
+# Create the /data/web_static/shared directory
+mkdir -p /data/web_static/shared
 
-# Create or recreate symbolic link
+# Create the /data/web_static/releases/test/index.html file
+echo "Welcome to AirBnB" > /data/web_static/releases/test/index.html
+
+# Create a symbolic link /data/web_static/current linked to the /data/web_static/releases/test/ folder
 ln -sf /data/web_static/releases/test /data/web_static/current
 
-# Give ownership to ubuntu user and group recursively
-sudo chown -R ubuntu:ubuntu /data/
+# Give ownership of the /data/ folder to the ubuntu user AND group
+chown -R ubuntu:ubuntu /data
 
-# Update Nginx configuration
-config_file="/etc/nginx/sites-available/default"
-nginx_config="location /hbnb_static {
+# Update the Nginx configuration to serve the content of /data/web_static/current/ to hbnb_static
+# (ex: https://mydomainname.tech/hbnb_static). Don't forget to restart Nginx after updating the configuration:
+
+# Get the current Nginx configuration
+nginx_config=$(cat /etc/nginx/sites-available/default)
+
+# Add the following line to the Nginx configuration
+echo "server {
+  listen 80;
+  server_name localhost;
+
+  location /hbnb_static {
     alias /data/web_static/current;
-}"
+  }
+}
+" >> $nginx_config
 
-# Check if the configuration already exists, if not, add it
-if ! grep -q "location /hbnb_static" "$config_file"; then
-    sudo sed -i "/server_name _;/ a $nginx_config" "$config_file"
-fi
+# Update Nginx
+nginx -s reload
 
-# Restart Nginx
-sudo service nginx restart
+# The script should always exit successfully
+exit 0
