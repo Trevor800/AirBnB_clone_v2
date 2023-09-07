@@ -1,29 +1,27 @@
 #!/usr/bin/env bash
-# Update package lists and install Nginx
-sudo apt-get update
-sudo apt-get install -y nginx
+# Bash script to set up web servers for web_static deployment
 
-# Create necessary directories
-sudo mkdir -p /data/web_static/releases/test /data/web_static/shared
+# Update package list and install Nginx
+apt-get -y update
+apt-get -y install nginx
 
-# Create a fake HTML file
-echo "Welcome to AirBnB" | sudo tee /data/web_static/releases/test/index.html > /dev/null
+# Create directories if they don't exist
+mkdir -p /data/web_static/releases/test
+mkdir -p /data/web_static/shared
 
-# Create or recreate symbolic link
-sudo ln -sf /data/web_static/releases/test /data/web_static/current
+# Create a simple HTML file
+echo "Welcome to AirBnB" > /data/web_static/releases/test/index.html
 
-# Give ownership to the ubuntu user and group recursively
-sudo chown -R ubuntu:ubuntu /data/
+# Create a symbolic link
+ln -sf /data/web_static/releases/test /data/web_static/current
 
-# Update Nginx configuration
-nginx_config="location /hbnb_static {
-    alias /data/web_static/current;
-}"
+# Set ownership to the ubuntu user
+chown -R ubuntu:ubuntu /data/
 
-# Check if the configuration already exists, if not, add it
-if ! sudo grep -q "location /hbnb_static" /etc/nginx/sites-available/default; then
-    echo "$nginx_config" | sudo tee -a /etc/nginx/sites-available/default > /dev/null
-fi
+# Configure Nginx to serve /hbnb_static
+config_file="/etc/nginx/sites-available/default"
+nginx_config="\nlocation /hbnb_static/ {\n\talias /data/web_static/current/;\n}\n"
+sed -i "/server_name _;/a $nginx_config" $config_file
 
-# Restart Nginx
-sudo service nginx restart
+# Restart Nginx to apply changes
+service nginx restart
