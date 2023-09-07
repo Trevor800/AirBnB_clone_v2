@@ -34,5 +34,3 @@ fi
 
 # Restart Nginx
 sudo service nginx restart
-
-exit 0
