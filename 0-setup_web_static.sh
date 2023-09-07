@@ -1,38 +1,30 @@
 #!/usr/bin/env bash
-# Check if Nginx is installed, and if not, install it
-if ! command -v nginx &> /dev/null; then
-    sudo apt-get update
-    sudo apt-get -y install nginx
-fi
+# Update package lists to ensure we have the latest package information
+sudo apt-get -y update
 
-# Create necessary directories if they don't exist
-sudo mkdir -p /data/web_static/releases/test /data/web_static/shared
+# Install Nginx web server
+sudo apt-get -y install nginx
 
-# Create a fake HTML file for testing
-echo "<html>
-  <head>
-  </head>
-  <body>
-    Holberton School
-  </body>
-</html>" | sudo tee /data/web_static/releases/test/index.html > /dev/null
+# Create necessary directories for web_static deployment
+sudo mkdir -p /data/ /data/web_static/ /data/web_static/releases/ /data/web_static/shared/ /data/web_static/releases/test/
 
-# Create or recreate symbolic link
-ln -sf /data/web_static/releases/test /data/web_static/current
+# Create a simple HTML file for testing purposes and store it in the appropriate location
+echo "Holberton School for the win!" | sudo tee /data/web_static/releases/test/index.html > /dev/null
 
-# Give ownership to ubuntu user and group recursively
+# Remove any existing symbolic link at /data/web_static/current
+sudo rm -rf /data/web_static/current
+
+# Create a symbolic link to make /data/web_static/releases/test/ the current version
+sudo ln -s /data/web_static/releases/test/ /data/web_static/current
+
+# Change ownership of the /data/ directory and its contents to the 'ubuntu' user and group
 sudo chown -R ubuntu:ubuntu /data/
 
-# Update Nginx configuration
-config_file="/etc/nginx/sites-available/default"
-nginx_config="location /hbnb_static {
-    alias /data/web_static/current;
-}"
+# Define an Nginx server configuration block for serving /hbnb_static/
+server="\\\tlocation /hbnb_static/ {\n\t\talias /data/web_static/current/;\n\t}\n"
 
-# Check if the configuration already exists, if not, add it
-if ! grep -q "location /hbnb_static" "$config_file"; then
-    sudo sed -i "/server_name _;/ a $nginx_config" "$config_file"
-fi
+# Insert the server configuration block into the Nginx default site configuration
+sudo sed -i "38i $server" /etc/nginx/sites-available/default
 
-# Restart Nginx
+# Restart Nginx to apply the new configuration
 sudo service nginx restart
