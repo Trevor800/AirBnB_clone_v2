@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# Install Nginx if not already installed
+# Check if Nginx is installed, and if not, install it
 if ! command -v nginx &> /dev/null; then
     sudo apt-get update
     sudo apt-get -y install nginx
 fi
 
-# Create necessary folders
+# Create necessary directories if they don't exist
 sudo mkdir -p /data/web_static/releases/test /data/web_static/shared
 
-# Create a fake HTML file
+# Create a fake HTML file for testing
 echo "<html>
   <head>
   </head>
@@ -20,7 +20,7 @@ echo "<html>
 # Create or recreate symbolic link
 ln -sf /data/web_static/releases/test /data/web_static/current
 
-# Give ownership to ubuntu user and group
+# Give ownership to ubuntu user and group recursively
 sudo chown -R ubuntu:ubuntu /data/
 
 # Update Nginx configuration
