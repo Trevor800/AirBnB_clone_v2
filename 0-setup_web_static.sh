@@ -1,21 +1,26 @@
 #!/usr/bin/env bash
-# Bash script to set up web servers for web_static deployment
+# Check if Nginx is installed, and if not, install it
+if ! command -v nginx &> /dev/null; then
+    sudo apt-get update
+    sudo apt-get -y install nginx
+fi
 
-# Update package list and install Nginx
-apt-get -y update
-apt-get -y install nginx
+# Create necessary directories if they don't exist
+sudo mkdir -p /data/web_static/releases/test /data/web_static/shared
 
-# Create directories if they don't exist
-mkdir -p /data/web_static/releases/test
-mkdir -p /data/web_static/shared
+# Create a fake HTML file for testing
+echo "<html>
+  <head>
+  </head>
+  <body>
+    Holberton School
+  </body>
+</html>" | sudo tee /data/web_static/releases/test/index.html > /dev/null
 
-# Create a simple HTML file
-echo "Welcome to AirBnB" > /data/web_static/releases/test/index.html
-
-# Create a symbolic link
+# Create or recreate symbolic link
 ln -sf /data/web_static/releases/test /data/web_static/current
 
-# Set ownership to the ubuntu user
+# Give ownership to ubuntu user and group recursively
 chown -R ubuntu:ubuntu /data/
 
 # Configure Nginx to serve /hbnb_static
