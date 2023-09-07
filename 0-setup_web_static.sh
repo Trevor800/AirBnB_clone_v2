@@ -1,36 +1,65 @@
 #!/usr/bin/env bash
-# Install Nginx if not already installed
-sudo apt-get update
-sudo apt-get -y install nginx
+# Check if Nginx is installed
+if ! command -v nginx &>/dev/null; then
+  apt-get update
+  apt-get install nginx -y
+fi
 
-# Create necessary folders
-sudo mkdir -p /data/web_static/releases/test /data/web_static/shared
+# Create the /data directory if it doesn't exist
+if [ ! -d /data ]; then
+  mkdir /data
+fi
 
-# Create a fake HTML file
+# Create the /data/web_static directory if it doesn't exist
+if [ ! -d /data/web_static ]; then
+  mkdir /data/web_static
+fi
+
+# Create the /data/web_static/releases directory if it doesn't exist
+if [ ! -d /data/web_static/releases ]; then
+  mkdir /data/web_static/releases
+fi
+
+# Create the /data/web_static/shared directory if it doesn't exist
+if [ ! -d /data/web_static/shared ]; then
+  mkdir /data/web_static/shared
+fi
+
+# Create the /data/web_static/releases/test directory if it doesn't exist
+if [ ! -d /data/web_static/releases/test ]; then
+  mkdir /data/web_static/releases/test
+fi
+
+# Create a fake HTML file /data/web_static/releases/test/index.html
 echo "<html>
   <head>
   </head>
   <body>
     Holberton School
   </body>
-</html>" | sudo tee /data/web_static/releases/test/index.html > /dev/null
+</html>" > /data/web_static/releases/test/index.html
 
-# Create or recreate symbolic link
-sudo ln -sf /data/web_static/releases/test/ /data/web_static/current
-
-# Give ownership to ubuntu user and group
-sudo chown -R ubuntu:ubuntu /data/
-
-# Update Nginx configuration
-config_file="/etc/nginx/sites-available/default"
-nginx_config="location /hbnb_static {
-    alias /data/web_static/current;
-}"
-
-# Check if the configuration already exists, if not, add it
-if ! grep -q "location /hbnb_static" "$config_file"; then
-    sudo sed -i "/server_name _;/ a $nginx_config" "$config_file"
+# Create a symbolic link /data/web_static/current linked to the /data/web_static/releases/test/ folder
+if [ -L /data/web_static/current ]; then
+  rm /data/web_static/current
 fi
 
-# Restart Nginx
-sudo service nginx restart
+ln -s /data/web_static/releases/test /data/web_static/current
+
+# Give ownership of the /data/ folder to the ubuntu user AND group
+chown -R ubuntu:ubuntu /data
+
+# Update the Nginx configuration to serve the content of /data/web_static/current/ to hbnb_static
+# (ex: https://mydomainname.tech/hbnb_static). Don't forget to restart Nginx after updating the configuration:
+
+echo "server {
+  listen 80;
+  server_name localhost;
+
+  location /hbnb_static {
+    alias /data/web_static/current;
+  }
+}
+" > /etc/nginx/sites-available/default
+
+nginx -s reload
