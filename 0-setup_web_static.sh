@@ -12,7 +12,7 @@ mkdir -p /data/web_static/releases/test
 mkdir -p /data/web_static/shared
 
 # Create the /data/web_static/releases/test/index.html file
-echo "Welcome to AirBnB" > /data/web_static/releases/test/index.html
+echo "Holberton School" > /data/web_static/releases/test/index.html
 
 # Create a symbolic link /data/web_static/current linked to the /data/web_static/releases/test/ folder
 ln -sf /data/web_static/releases/test /data/web_static/current
