@@ -21,12 +21,18 @@ echo "<html>
 ln -sf /data/web_static/releases/test /data/web_static/current
 
 # Give ownership to ubuntu user and group recursively
-chown -R ubuntu:ubuntu /data/
+sudo chown -R ubuntu:ubuntu /data/
 
-# Configure Nginx to serve /hbnb_static
+# Update Nginx configuration
 config_file="/etc/nginx/sites-available/default"
-nginx_config="\nlocation /hbnb_static/ {\n\talias /data/web_static/current/;\n}\n"
-sed -i "/server_name _;/a $nginx_config" $config_file
+nginx_config="location /hbnb_static {
+    alias /data/web_static/current;
+}"
 
-# Restart Nginx to apply changes
-service nginx restart
+# Check if the configuration already exists, if not, add it
+if ! grep -q "location /hbnb_static" "$config_file"; then
+    sudo sed -i "/server_name _;/ a $nginx_config" "$config_file"
+fi
+
+# Restart Nginx
+sudo service nginx restart
